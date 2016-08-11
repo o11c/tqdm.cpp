@@ -78,6 +78,6 @@ namespace tqdm
         // If we're wrong, nobody cares until the next append,
         // which will fix this anyway.
         this->approx_tail = &node->intrusive_link_next;
-    }
 #endif
+    }
 }
