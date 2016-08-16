@@ -10,7 +10,7 @@ ARFLAGS = rcs
 
 
 # Project variables
-WARNINGS = -Werror -Wall -Wextra -Wunused -Wformat=2
+WARNINGS = -Werror -Wall -Wextra -Wunused -Wformat=2 -Wno-missing-field-initializers
 
 # No end-user servicable parts below.
 
@@ -18,6 +18,7 @@ override CFLAGS += -std=c99 -fPIC
 override CXXFLAGS += -std=c++11 -fPIC
 
 override CPPFLAGS += -I ./include/
+override CPPFLAGS += -MMD
 
 .DEFAULT_GOAL = all
 
@@ -25,11 +26,12 @@ BIN_SOURCES := src/main.cpp
 LIB_SOURCES := $(filter-out ${BIN_SOURCES},$(wildcard src/*.cpp))
 TEST_SOURCES := $(wildcard test/*.cpp test/*.c)
 INTERNAL_HEADERS := $(wildcard src/*.hpp)
-PUBLIC_HEADERS := $(wildcard include/tqdm/*.hpp include/tqdm/*.h)
+PUBLIC_HEADERS := $(wildcard include/tqdm/*.hpp include/tqdm/*.h include/tqdm/*.tcc)
 
 BIN_OBJECTS := $(patsubst %,obj/%.o,${BIN_SOURCES})
 LIB_OBJECTS := $(patsubst %,obj/%.o,${LIB_SOURCES})
 TEST_OBJECTS := $(patsubst %,obj/%.o,${TEST_SOURCES})
+DEPS := $(patsubst %.o,%.d, ${BIN_OBJECTS} ${LIB_OBJECTS} ${TEST_OBJECTS})
 
 BIN := bin/tqdm
 LIB := lib/libtqdm.a
@@ -49,12 +51,10 @@ tests: ${TESTS}
 
 clean:
 	rm -rf bin/ lib/ obj/
+distclean: clean
 
 ${BIN}: ${BIN_OBJECTS} ${LIB}
 ${LIB}: ${LIB_OBJECTS}
-
-# Temporary - should set up -MD and include .d files for finer control.
-${BIN_OBJECTS} ${LIB_OBJECTS} ${TEST_OBJECTS}: ${INTERNAL_HEADERS} ${PUBLIC_HEADERS}
 
 .SECONDARY:
 .DELETE_ON_ERROR:
@@ -84,3 +84,5 @@ lib/%.a:
 	${MKDIR_FIRST}
 	${RM_FIRST}
 	${AR} ${ARFLAGS} $@ $^
+
+-include ${DEPS}
